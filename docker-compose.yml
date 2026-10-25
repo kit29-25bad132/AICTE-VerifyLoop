@@ -56,6 +56,40 @@ services:
       - postgres
       - redis
 
+  parser-service:
+    build:
+      context: ./workers/parser-service
+    ports:
+      - "8002:8002"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  document-worker:
+    build:
+      context: .
+      dockerfile: workers/document-processor/Dockerfile
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      ORCHESTRATOR_SERVICE_URL: http://orchestrator-bridge:8001
+      PARSER_SERVICE_URL: http://parser-service:8002
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      orchestrator-bridge:
+        condition: service_started
+      parser-service:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   redis_data:

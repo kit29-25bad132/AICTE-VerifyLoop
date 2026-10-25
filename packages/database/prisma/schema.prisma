@@ -143,6 +143,7 @@ model FacultyHash {
   createdAt     DateTime    @default(now())
 
   @@index([panHash])
+  @@unique([institutionId, panHash])
 }
 
 model DeficiencyNotice {
