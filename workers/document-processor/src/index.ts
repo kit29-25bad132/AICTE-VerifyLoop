@@ -1,15 +1,20 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
 import { Worker } from 'bullmq';
+import path from 'node:path';
 import { PrismaClient } from '@aicte/database';
 import { connection } from './redis.js';
 import { ocrWithTesseract, parseDocument } from './parser-client.js';
 import { ocrWithGemini } from './ocr-fallback.js';
 import { extractWithAI } from './ai-extractor.js';
 import { evaluateFacultyRatio, evaluateLandArea, evaluateComputerLab, evaluateLibrary, evaluateFireSafety, evaluateNoc, detectGhostFaculty } from '@aicte/rules-engine';
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+dotenv.config({ path: path.resolve(process.cwd(), '../../.env') });
 const prisma = new PrismaClient();
 interface JobData { documentId: string; applicationId: string; storagePath: string; docType: string; }
 const worker = new Worker<JobData>('document-processing', async (job) => {
+  const startedAt = Date.now();
   const { documentId, applicationId, storagePath, docType } = job.data;
+  console.info(`[worker] job=${job.id} started attempt=${job.attemptsMade + 1}`);
   await prisma.document.update({ where: { id: documentId }, data: { status: 'PROCESSING' } });
   await job.updateProgress(10);
   const parsed = await parseDocument(storagePath);
@@ -40,14 +45,22 @@ const worker = new Worker<JobData>('document-processing', async (job) => {
   await prisma.document.update({ where: { id: documentId }, data: { status: 'PROCESSED' } });
   await prisma.application.update({ where: { id: applicationId }, data: { status: 'REVIEW_READY' } });
   await job.updateProgress(100);
-}, { connection, concurrency: 3 });
+  console.info(`[worker] job=${job.id} document=${documentId} completed elapsed_ms=${Date.now() - startedAt}`);
+}, {
+  connection,
+  concurrency: 1,
+  lockDuration: 360000,
+  stalledInterval: 60000,
+  maxStalledCount: 1,
+});
 worker.on('failed', (job, error) => {
-  console.error(`[worker] ${job?.id} failed`, error.message);
-  if (job) {
+  const terminal = Boolean(job && job.attemptsMade >= (job.opts.attempts ?? 1));
+  console.error(`[worker] job=${job?.id ?? 'unknown'} failed attempt=${job?.attemptsMade ?? 'unknown'} terminal=${terminal}: ${error.message}`);
+  if (job && terminal) {
     void prisma.document.update({
       where: { id: job.data.documentId },
       data: { status: 'PROCESSING_FAILED' },
-    }).catch((updateError) => console.error('[worker] failed to persist processing failure', updateError));
+    }).catch((updateError) => console.error(`[worker] failed to persist processing failure: ${updateError instanceof Error ? updateError.message : 'unknown error'}`));
   }
 });
 console.log('[worker] Document processor started');

@@ -59,6 +59,9 @@ services:
   parser-service:
     build:
       context: ./workers/parser-service
+    # Local development runs the parser on the host (it must read host upload
+    # paths from queue jobs). Opt in with: docker compose --profile containerized up -d
+    profiles: ["containerized"]
     ports:
       - "8002:8002"
     restart: unless-stopped
@@ -72,6 +75,9 @@ services:
     build:
       context: .
       dockerfile: workers/document-processor/Dockerfile
+    # This service expects container-internal database/Redis URLs and a mount
+    # for host upload paths; it is not usable in the host-based local workflow.
+    profiles: ["containerized"]
     env_file:
       - .env
     environment:
