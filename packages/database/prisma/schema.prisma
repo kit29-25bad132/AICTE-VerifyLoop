@@ -1,0 +1,173 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ApplicationStatus {
+  DRAFT
+  PROCESSING
+  REVIEW_READY
+  DEFICIENCY_OPEN
+  DEFICIENCY_DEADLINE_EXCEEDED
+  RESOLVED_PENDING_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum TrustState {
+  VERIFIED_OFFICIAL
+  MISMATCH_DETECTED
+  SOURCE_UNAVAILABLE
+  MANUAL_REVIEW_REQUIRED
+  UNGROUNDED_NEEDS_REVIEW
+}
+
+enum Severity {
+  CRITICAL
+  WARNING
+  INFO
+}
+
+enum SLAStatus {
+  ON_TRACK
+  AT_RISK
+  BREACHED
+}
+
+enum UserRole {
+  APPLICANT
+  SCRUTINY_OFFICER
+  ADMIN
+}
+
+model User {
+  id            String       @id @default(uuid())
+  email         String       @unique
+  passwordHash  String
+  role          UserRole
+  institutionId String?
+  institution   Institution? @relation(fields: [institutionId], references: [id])
+  createdAt     DateTime     @default(now())
+  applications  Application[] @relation("AssignedReviewer")
+}
+
+model Institution {
+  id            String        @id @default(uuid())
+  aicteId       String        @unique
+  name          String
+  state         String
+  users         User[]
+  applications  Application[]
+  facultyHashes FacultyHash[]
+}
+
+model Application {
+  id                        String              @id @default(uuid())
+  institutionId             String
+  institution               Institution         @relation(fields: [institutionId], references: [id])
+  category                  String
+  status                    ApplicationStatus   @default(DRAFT)
+  slaStatus                 SLAStatus           @default(ON_TRACK)
+  reviewerDeadline          DateTime
+  applicantResponseDeadline DateTime?
+  assignedReviewerId        String?
+  assignedReviewer           User?               @relation("AssignedReviewer", fields: [assignedReviewerId], references: [id])
+  createdAt                 DateTime            @default(now())
+  updatedAt                 DateTime            @updatedAt
+  documents                 Document[]
+  findings                  Finding[]
+  auditLogs                 AuditLog[]
+  deficiencyNotices         DeficiencyNotice[]
+}
+
+model Document {
+  id            String      @id @default(uuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id])
+  docType       String
+  version       Int         @default(1)
+  fileHash      String
+  storageUrl    String
+  pageCount     Int?
+  extractedData Json?
+  ocrUsed       Boolean     @default(false)
+  uploadedAt    DateTime    @default(now())
+  findings      Finding[]
+}
+
+model Finding {
+  id            String      @id @default(uuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id])
+  documentId    String?
+  document      Document?   @relation(fields: [documentId], references: [id])
+  ruleId        String
+  severity      Severity
+  trustState    TrustState
+  explanation   String
+  suggestion    String
+  quote         String?
+  pageNumber    Int?
+  boundingCoords Json?
+  isResolved    Boolean     @default(false)
+  resolvedBy    String?
+  resolvedAt    DateTime?
+  dismissReason String?
+  createdAt     DateTime    @default(now())
+}
+
+model AuditLog {
+  id            String      @id @default(uuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id])
+  action        String
+  actor         String
+  actorRole     UserRole
+  detail        Json?
+  previousHash  String
+  currentHash   String
+  timestamp     DateTime    @default(now())
+}
+
+model FacultyHash {
+  id            String      @id @default(uuid())
+  institutionId String
+  institution   Institution @relation(fields: [institutionId], references: [id])
+  panHash       String
+  aadhaarHash   String?
+  academicYear  String
+  createdAt     DateTime    @default(now())
+
+  @@index([panHash])
+}
+
+model DeficiencyNotice {
+  id                 String      @id @default(uuid())
+  applicationId      String
+  application        Application @relation(fields: [applicationId], references: [id])
+  issuedAt           DateTime    @default(now())
+  responseDueDate    DateTime
+  findingIds         String[]
+  emailSent          Boolean     @default(false)
+  resolvedAt         DateTime?
+}
+
+model HandbookRule {
+  id              String   @id @default(uuid())
+  clauseId        String   @unique
+  title           String
+  description     String
+  mathExpression  String?
+  threshold       Float?
+  unit            String?
+  category        String
+  effectiveFrom   DateTime
+  approvedBy      String
+  approvedAt      DateTime
+  isActive        Boolean  @default(true)
+  version         Int      @default(1)
+}

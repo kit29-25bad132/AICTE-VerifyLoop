@@ -1,8 +1,16 @@
 {
-  "name": "@aicte-verifyloop/database",
-  "version": "0.1.0",
+  "name": "@aicte/database",
+  "version": "0.0.1",
   "private": true,
   "type": "module",
-  "scripts": {"check": "tsc -p tsconfig.json --noEmit"},
-  "devDependencies": {"typescript": "^5.8.2"}
+  "main": "src/index.ts",
+  "scripts": {
+    "check": "tsc -p tsconfig.json --noEmit",
+    "generate": "prisma generate",
+    "migrate:dev": "prisma migrate dev",
+    "migrate:deploy": "prisma migrate deploy",
+    "studio": "prisma studio"
+  },
+  "dependencies": {"@prisma/client": "^5.22.0"},
+  "devDependencies": {"prisma": "^5.22.0", "typescript": "^5.8.2"}
 }
