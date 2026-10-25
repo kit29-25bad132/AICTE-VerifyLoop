@@ -3,17 +3,25 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "scripts": {"build": "tsc -p tsconfig.json", "check": "tsc -p tsconfig.json --noEmit"},
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json --noEmit"
+  },
   "dependencies": {
-    "@aicte/database": "workspace:*",
     "@aicte-verifyloop/shared-types": "workspace:*",
+    "@aicte/database": "workspace:*",
     "@aicte/rules-engine": "workspace:*",
     "axios": "^1.12.2",
     "bullmq": "^5.63.0",
     "dotenv": "^17.4.2",
     "ioredis": "^5.8.2",
     "langsmith": "^0.3.15",
-    "zod": "^3.25.76"
+    "zod": "^3.25.76",
+    "zod-to-json-schema": "^3.25.2"
   },
-  "devDependencies": {"@types/node": "^22.14.0", "tsx": "^4.23.15", "typescript": "^5.8.2"}
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "tsx": "^4.23.15",
+    "typescript": "^5.8.2"
+  }
 }
