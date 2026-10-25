@@ -1,4 +1,4 @@
-import { getGeminiClient, isGeminiAvailable } from './geminiClient.js';
+import { getGeminiClient, getGeminiModel, isGeminiAvailable } from './geminiClient.js';
 import { dbStore } from './dbStore.js';
 import {
   DocumentRecord,
@@ -108,7 +108,7 @@ Provide your response strictly in the following valid JSON format:
 }`;
 
     const response = await gemini.models.generateContent({
-      model: 'gemini-3.7-flash',
+      model: getGeminiModel(),
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
@@ -381,7 +381,7 @@ Respond strictly in JSON format:
 }`;
 
     const response = await gemini.models.generateContent({
-      model: 'gemini-3.7-flash',
+      model: getGeminiModel(),
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
@@ -579,7 +579,7 @@ Respond strictly in JSON format:
 }`;
 
     const response = await gemini.models.generateContent({
-      model: 'gemini-3.7-flash',
+      model: getGeminiModel(),
       contents: prompt,
       config: {
         responseMimeType: 'application/json',

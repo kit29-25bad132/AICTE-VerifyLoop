@@ -1,6 +1,11 @@
+import 'dotenv/config';
 import { GoogleGenAI } from "@google/genai";
 
 let genAiClient: GoogleGenAI | null = null;
+
+export function getGeminiModel(): string {
+  return process.env.GEMINI_MODEL?.trim() || 'gemini-3.8-flash';
+}
 
 export function getGeminiClient(): GoogleGenAI | null {
   const apiKey = process.env.GEMINI_API_KEY;
