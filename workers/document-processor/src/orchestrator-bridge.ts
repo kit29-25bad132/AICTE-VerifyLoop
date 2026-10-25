@@ -1,40 +1,31 @@
-import { spawn } from 'node:child_process';
+import axios from 'axios';
 
-export interface OrchestratorRequest {
-  prompt: string;
-  schema: unknown;
+const ORCH_URL = process.env.ORCHESTRATOR_SERVICE_URL ?? 'http://localhost:8001';
+
+export interface ExtractResult {
+  data: Record<string, unknown>;
+  provider: string;
+  model: string;
 }
 
-export interface OrchestratorResponse {
-  succeeded: boolean;
-  response?: unknown;
-  error?: string;
-}
-
-/**
- * The existing orchestrator is Python-only. This boundary is intentionally
- * process-based until that project exposes a supported service or CLI entrypoint.
- */
 export async function extractWithOrchestrator(
-  request: OrchestratorRequest,
-): Promise<OrchestratorResponse> {
-  return new Promise((resolve, reject) => {
-    const child = spawn(globalThis.process.env.PYTHON ?? 'python', ['-c', 'raise SystemExit(78)'], {
-      stdio: ['ignore', 'ignore', 'pipe'],
-    });
-    let error = '';
-    child.stderr.on('data', (chunk: Buffer) => { error += chunk.toString(); });
-    child.on('error', reject);
-    child.on('close', (code: number | null) => {
-      if (code === 78) {
-        resolve({
-          succeeded: false,
-          error: 'The Python llm-orchestrator has no CLI/service entrypoint yet.',
-        });
-      } else {
-        reject(new Error(error || `orchestrator process exited with code ${code ?? 'unknown'}`));
-      }
-    });
-    void request;
+  systemPrompt: string,
+  userPrompt: string,
+  outputSchema: Record<string, unknown>,
+): Promise<ExtractResult> {
+  const res = await axios.post<ExtractResult>(`${ORCH_URL}/extract`, {
+    system_prompt: systemPrompt,
+    user_prompt: userPrompt,
+    output_schema: outputSchema,
   });
+  return res.data;
+}
+
+export async function checkOrchestratorHealth(): Promise<boolean> {
+  try {
+    await axios.get(`${ORCH_URL}/health`, { timeout: 3000 });
+    return true;
+  } catch {
+    return false;
+  }
 }
