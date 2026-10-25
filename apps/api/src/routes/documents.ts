@@ -53,6 +53,11 @@ router.post('/upload', requireAuth, upload.array('files', 10), async (req: Reque
   }
   const files = (req.files ?? []) as Express.Multer.File[];
   if (!files.length) { res.status(400).json({ error: 'No files uploaded' }); return; }
+  if (files.reduce((total, file) => total + file.size, 0) > 50 * 1024 * 1024) {
+    for (const file of files) fs.rmSync(file.path, { force: true });
+    res.status(413).json({ error: 'The combined upload size must not exceed 50 MB' });
+    return;
+  }
   const results: Array<Record<string, unknown>> = [];
   for (const file of files) {
     const ext = path.extname(file.originalname).slice(1).toLowerCase();
@@ -74,7 +79,7 @@ router.post('/upload', requireAuth, upload.array('files', 10), async (req: Reque
     const storagePath = path.join(storageDir, fileName);
     fs.renameSync(file.path, storagePath);
     const doc = await prisma.document.create({
-      data: { applicationId, docType, fileHash, storageUrl: `/uploads/${application.institutionId}/${applicationId}/v1/${fileName}` },
+      data: { applicationId, docType, fileHash, status: 'PENDING_PROCESSING', storageUrl: `/uploads/${application.institutionId}/${applicationId}/v1/${fileName}` },
     });
     await documentQueue.add('process-document-job', { documentId: doc.id, applicationId, storagePath, docType });
     await prisma.auditLog.create({
@@ -94,7 +99,7 @@ router.get('/:id/status', requireAuth, async (req: Request, res: Response) => {
   if (req.user!.role === 'APPLICANT' && req.user!.institutionId !== document.application.institutionId) {
     res.status(403).json({ error: 'Forbidden' }); return;
   }
-  res.json({ id: document.id, status: document.application.status, pageCount: document.pageCount, ocrUsed: document.ocrUsed, extractedData: document.extractedData });
+  res.json({ id: document.id, status: document.status, applicationStatus: document.application.status, pageCount: document.pageCount, ocrUsed: document.ocrUsed, extractedData: document.extractedData });
 });
 
 export default router;

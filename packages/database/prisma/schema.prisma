@@ -18,6 +18,13 @@ enum ApplicationStatus {
   REJECTED
 }
 
+enum DocumentStatus {
+  PENDING_PROCESSING
+  PROCESSING
+  PROCESSED
+  PROCESSING_FAILED
+}
+
 enum TrustState {
   VERIFIED_OFFICIAL
   MISMATCH_DETECTED
@@ -95,6 +102,7 @@ model Document {
   pageCount     Int?
   extractedData Json?
   ocrUsed       Boolean     @default(false)
+  status        DocumentStatus @default(PENDING_PROCESSING)
   uploadedAt    DateTime    @default(now())
   findings      Finding[]
 }
