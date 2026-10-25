@@ -6,6 +6,8 @@ import { Router, type Request, type Response } from 'express';
 import multer from 'multer';
 import { requireAuth } from '../middleware/auth.js';
 import { documentQueue } from '../queues/document-queue.js';
+import { validateDocumentType } from '../documents/doc-type.js';
+import { discardUploadedFiles } from '../documents/upload-cleanup.js';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -36,25 +38,41 @@ function validMagic(filePath: string, ext: string): boolean {
 function hash(filePath: string): string {
   return crypto.createHash('sha256').update(fs.readFileSync(filePath)).digest('hex');
 }
+/** Removes only this request's Multer temp files when it is rejected before storage. */
+function discardUploads(request: Request): void {
+  discardUploadedFiles(request.files as Express.Multer.File[] | undefined);
+}
 
 router.post('/upload', requireAuth, upload.array('files', 10), async (req: Request, res: Response) => {
-  const { applicationId, docType } = req.body as { applicationId?: string; docType?: string };
-  if (!applicationId || !docType) {
+  const { applicationId, docType: rawDocType } = req.body as { applicationId?: string; docType?: string };
+  if (!applicationId || !rawDocType) {
+    discardUploads(req);
     res.status(400).json({ error: 'applicationId and docType are required' });
     return;
   }
+  const docTypeCheck = validateDocumentType(rawDocType);
+  if (!docTypeCheck.ok) {
+    discardUploads(req);
+    res.status(400).json({ error: docTypeCheck.error, supported: docTypeCheck.supported });
+    return;
+  }
+  const docType = docTypeCheck.docType;
   const application = await prisma.application.findUnique({
     where: { id: applicationId },
     include: { institution: { include: { users: { where: { id: req.user!.userId } } } } },
   });
-  if (!application) { res.status(404).json({ error: 'Application not found' }); return; }
+  if (!application) {
+    discardUploads(req);
+    res.status(404).json({ error: 'Application not found' }); return;
+  }
   if (req.user!.role === 'APPLICANT' && application.institution.users.length === 0) {
+    discardUploads(req);
     res.status(403).json({ error: 'Forbidden: not your institution' }); return;
   }
   const files = (req.files ?? []) as Express.Multer.File[];
   if (!files.length) { res.status(400).json({ error: 'No files uploaded' }); return; }
   if (files.reduce((total, file) => total + file.size, 0) > 50 * 1024 * 1024) {
-    for (const file of files) fs.rmSync(file.path, { force: true });
+    discardUploads(req);
     res.status(413).json({ error: 'The combined upload size must not exceed 50 MB' });
     return;
   }

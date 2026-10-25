@@ -3,10 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "scripts": {"build": "tsc -p tsconfig.json", "check": "tsc -p tsconfig.json --noEmit", "dev": "tsx src/index.ts"},
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "dev": "tsx src/index.ts",
+    "test": "node --import tsx --test src/__tests__/doc-type.test.ts src/__tests__/upload-cleanup.test.ts"
+  },
   "dependencies": {
     "@aicte/database": "workspace:*",
     "@aicte/rules-engine": "workspace:*",
+    "@aicte-verifyloop/shared-types": "workspace:*",
     "bcryptjs": "^2.4.3",
     "bullmq": "^5.63.0",
     "cors": "^2.8.5",
