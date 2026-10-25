@@ -1,6 +1,6 @@
 import { createRequire } from 'module';
 import mammoth from 'mammoth';
-import { getGeminiClient, isGeminiAvailable } from './geminiClient.js';
+import { getGeminiClient, getGeminiModel, isGeminiAvailable } from './geminiClient.js';
 
 const require = createRequire(import.meta.url);
 let pdfParse: any;
@@ -90,7 +90,7 @@ export async function parsePdfBuffer(buffer: Buffer, originalFilename?: string):
       try {
         const base64Data = buffer.toString('base64');
         const response = await gemini.models.generateContent({
-          model: 'gemini-3.7-flash',
+          model: getGeminiModel(),
           contents: [
             {
               role: 'user',

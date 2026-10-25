@@ -1,0 +1,9 @@
+{
+  "name": "@aicte-verifyloop/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {"build": "vite build", "check": "tsc -p tsconfig.json --noEmit", "dev": "vite"},
+  "dependencies": {"@vitejs/plugin-react": "^5.0.4", "react": "^19.0.1", "react-dom": "^19.0.1"},
+  "devDependencies": {"@types/react": "^19.0.0", "@types/react-dom": "^19.0.0", "typescript": "^5.8.2", "vite": "^6.2.3"}
+}

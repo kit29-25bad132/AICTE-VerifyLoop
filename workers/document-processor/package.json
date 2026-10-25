@@ -1,0 +1,14 @@
+{
+  "name": "@aicte-verifyloop/document-processor",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {"build": "tsc -p tsconfig.json", "check": "tsc -p tsconfig.json --noEmit"},
+  "dependencies": {
+    "@aicte-verifyloop/shared-types": "workspace:*",
+    "axios": "^1.12.2",
+    "bullmq": "^5.63.0",
+    "ioredis": "^5.8.2"
+  },
+  "devDependencies": {"@types/node": "^22.14.0", "typescript": "^5.8.2"}
+}
