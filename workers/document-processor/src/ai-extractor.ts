@@ -1,4 +1,5 @@
 import axios from 'axios';
+<<<<<<< HEAD
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import {
@@ -37,6 +38,11 @@ function extractionTimeoutMs(): number {
   return Number.isFinite(configured) && configured > 0 ? configured : 300_000;
 }
 
+=======
+import { getSchemaForDocType } from './extraction-schemas.js';
+import { zodToJsonSchema } from 'zod-to-json-schema';
+const URL = process.env.ORCHESTRATOR_SERVICE_URL ?? 'http://localhost:8001';
+>>>>>>> origin/dev
 export interface ExtractedFacts {
   [key: string]: unknown;
   evidence: Array<{ field: string; page: number; quote: string; grounded?: boolean }>;
@@ -57,6 +63,7 @@ export interface ExtractedFacts {
   noc_date?: string;
 }
 
+<<<<<<< HEAD
 export interface ExtractionResult {
   facts: ExtractedFacts;
   grounding: GroundingReport;
@@ -92,6 +99,9 @@ export type ExtractionFailureCategory =
 
 function classifyExtractionError(error: unknown): ExtractionFailureCategory {
   if (error instanceof ExtractionContractError) return error.category;
+=======
+function classifyExtractionError(error: unknown): string {
+>>>>>>> origin/dev
   if (axios.isAxiosError(error)) {
     if (error.code === 'ECONNABORTED') return 'client_timeout';
     const status = error.response?.status;
@@ -100,6 +110,7 @@ function classifyExtractionError(error: unknown): ExtractionFailureCategory {
     if (status !== undefined) return 'http_error';
     return 'connection_error';
   }
+<<<<<<< HEAD
   if (error instanceof z.ZodError) return 'schema_validation_failed';
   return 'unexpected_error';
 }
@@ -144,10 +155,28 @@ export async function extractWithAI(pages: readonly string[], docType: string): 
       throw new ExtractionContractError('Provider returned an empty extraction payload', 'empty_payload');
     }
 
+=======
+  return 'unexpected_error';
+}
+
+export async function extractWithAI(text: string, docType: string): Promise<ExtractedFacts> {
+  const schema = getSchemaForDocType(docType);
+  if (!schema) throw new Error(`No extraction schema configured for document type: ${docType}`);
+  const startedAt = Date.now();
+  try {
+    const result = await axios.post(`${URL}/extract`, {
+      system_prompt: 'Extract structured facts only. Do not evaluate compliance. Include exact evidence quotes.',
+      user_prompt: `Document text:\n${text.slice(0, 15000)}`,
+      output_schema: zodToJsonSchema(schema),
+    }, { timeout: 300000 });
+    const raw = String(result.data?.data?.raw ?? result.data?.text ?? '');
+    const jsonText = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+>>>>>>> origin/dev
     let candidate: unknown;
     try {
       candidate = JSON.parse(jsonText);
     } catch {
+<<<<<<< HEAD
       throw new ExtractionContractError('Provider returned non-JSON extraction content', 'non_json_payload');
     }
 
@@ -199,6 +228,27 @@ export async function extractWithAI(pages: readonly string[], docType: string): 
       durationMs,
       category,
     });
+=======
+      throw new Error('Provider returned non-JSON extraction content');
+    }
+    const parsed = schema.safeParse(candidate);
+    if (!parsed.success) {
+      throw new Error('Provider extraction did not match the requested schema');
+    }
+    const facts = parsed.data as ExtractedFacts;
+    for (const evidence of facts.evidence ?? []) evidence.grounded = text.includes(evidence.quote.trim());
+    console.info(`[ai-extractor] extraction succeeded elapsed_ms=${Date.now() - startedAt}`);
+    return facts;
+  } catch (error) {
+    const category = classifyExtractionError(error);
+    const message = error instanceof Error ? error.message : 'Extraction failed';
+    // The bridge returns a fixed, non-sensitive reason string (e.g. "all configured
+    // providers failed"); logging it separates a provider-side failure from a
+    // request-contract rejection without exposing provider error bodies.
+    const rawDetail = axios.isAxiosError(error) ? (error.response?.data as { detail?: unknown } | undefined)?.detail : undefined;
+    const detail = typeof rawDetail === 'string' ? ` detail=${rawDetail.slice(0, 200)}` : '';
+    console.error(`[ai-extractor] extraction failed category=${category} elapsed_ms=${Date.now() - startedAt}${detail}: ${message}`);
+>>>>>>> origin/dev
     throw error instanceof Error ? error : new Error(message);
   }
 }
