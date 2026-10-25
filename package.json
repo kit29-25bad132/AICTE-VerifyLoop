@@ -12,10 +12,13 @@
     "start": "node dist/server.cjs",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
-    "validate": "tsx scripts/validate-keys.ts"
+    "validate": "tsx scripts/validate-keys.ts",
+    "seed:demo": "tsx scripts/seed-demo.ts"
   },
   "dependencies": {
+    "@aicte/database": "workspace:*",
     "@google/genai": "^2.4.0",
+    "bcryptjs": "^2.4.3",
     "@tailwindcss/vite": "^4.1.14",
     "@types/multer": "^2.2.0",
     "@vitejs/plugin-react": "^5.0.4",
