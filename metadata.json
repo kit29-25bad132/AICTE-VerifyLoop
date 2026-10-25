@@ -1,0 +1,6 @@
+{
+  "name": "AICTE VerifyLoop",
+  "description": "AI-powered application-validation and regulatory-compliance platform for SIH 2026 project.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["AI_APPLICATION_VALIDATION", "REGULATORY_COMPLIANCE_MONITORING"]
+}
