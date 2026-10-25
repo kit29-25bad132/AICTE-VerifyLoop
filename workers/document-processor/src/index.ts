@@ -6,7 +6,6 @@ import { connection } from './redis.js';
 import { ocrWithTesseract, parseDocument } from './parser-client.js';
 import { ocrWithGemini } from './ocr-fallback.js';
 import { extractWithAI } from './ai-extractor.js';
-<<<<<<< HEAD
 import { applyGroundingGate } from './finding-trust.js';
 import { logOperation } from './trace.js';
 import {
@@ -18,9 +17,6 @@ import {
   evaluateNoc,
   detectGhostFaculty,
 } from '@aicte/rules-engine';
-=======
-import { evaluateFacultyRatio, evaluateLandArea, evaluateComputerLab, evaluateLibrary, evaluateFireSafety, evaluateNoc, detectGhostFaculty } from '@aicte/rules-engine';
->>>>>>> origin/dev
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 dotenv.config({ path: path.resolve(process.cwd(), '../../.env') });
 const prisma = new PrismaClient();
@@ -76,7 +72,6 @@ const worker = new Worker<JobData>('document-processing', async (job) => {
     prisma.application.update({ where: { id: applicationId }, data: { status: 'REVIEW_READY' } }),
   ]);
   await job.updateProgress(100);
-<<<<<<< HEAD
   const durationMs = Date.now() - startedAt;
   console.info(`[worker] job=${job.id} document=${documentId} completed elapsed_ms=${durationMs}`);
   logOperation({
@@ -87,9 +82,6 @@ const worker = new Worker<JobData>('document-processing', async (job) => {
     evidenceTotal: grounding.total,
     evidenceGrounded: grounding.grounded,
   });
-=======
-  console.info(`[worker] job=${job.id} document=${documentId} completed elapsed_ms=${Date.now() - startedAt}`);
->>>>>>> origin/dev
 }, {
   connection,
   concurrency: 1,
@@ -100,7 +92,6 @@ const worker = new Worker<JobData>('document-processing', async (job) => {
 worker.on('failed', (job, error) => {
   const terminal = Boolean(job && job.attemptsMade >= (job.opts.attempts ?? 1));
   console.error(`[worker] job=${job?.id ?? 'unknown'} failed attempt=${job?.attemptsMade ?? 'unknown'} terminal=${terminal}: ${error.message}`);
-<<<<<<< HEAD
   logOperation({
     operation: 'document.process',
     documentType: job?.data?.docType,
@@ -108,8 +99,6 @@ worker.on('failed', (job, error) => {
     durationMs: 0,
     category: terminal ? 'terminal_failure' : 'retryable_failure',
   });
-=======
->>>>>>> origin/dev
   if (job && terminal) {
     void prisma.document.update({
       where: { id: job.data.documentId },
