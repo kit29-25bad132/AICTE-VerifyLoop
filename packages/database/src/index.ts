@@ -5,6 +5,7 @@ export {
   Severity,
   SLAStatus,
   UserRole,
+  DocumentStatus,
 } from '@prisma/client';
 export type {
   User, Institution, Application, Document,

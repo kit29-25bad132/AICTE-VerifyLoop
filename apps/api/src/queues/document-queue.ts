@@ -5,4 +5,12 @@ const connection = new Redis(process.env.REDIS_URL ?? 'redis://localhost:6379', 
   maxRetriesPerRequest: null,
 });
 
-export const documentQueue = new Queue('document-processing', { connection });
+export const documentQueue = new Queue('document-processing', {
+  connection,
+  defaultJobOptions: {
+    attempts: 3,
+    backoff: { type: 'exponential', delay: 2000 },
+    removeOnComplete: 100,
+    removeOnFail: 500,
+  },
+});
