@@ -1,3 +1,9 @@
+export {
+  SUPPORTED_DOCUMENT_TYPES,
+  isSupportedDocumentType,
+} from './document-types.js';
+export type { SupportedDocumentType } from './document-types.js';
+
 export type ApplicationStatus =
   | 'DRAFT'
   | 'PROCESSING'

@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "check": "tsc -p tsconfig.json --noEmit"
+    "check": "tsc -p tsconfig.json --noEmit",
+    "test": "node --import tsx --test src/__tests__/extraction-schemas.test.ts src/__tests__/extraction-prompt.test.ts src/__tests__/grounding.test.ts src/__tests__/finding-trust.test.ts src/__tests__/trace.test.ts src/__tests__/extraction-pipeline.test.ts"
   },
   "dependencies": {
     "@aicte-verifyloop/shared-types": "workspace:*",
