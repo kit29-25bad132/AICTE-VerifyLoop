@@ -119,3 +119,10 @@ PDF text extraction currently uses the Node.js `pdf-parse` dependency, with a
 Gemini multimodal fallback for scanned PDFs. The Python OCR prerequisites are
 installed and verified for Phase 0, but are not yet wired into the application
 parser.
+
+## Quick Local Troubleshooting
+
+- **Database Port**: Note that PostgreSQL runs on mapped port `5433` (`DATABASE_URL=...:5433/...`).
+- **Prisma Migrations**: Run migrations explicitly with schema paths:
+  `npx prisma migrate dev --name add_sla_due_date --schema=packages/database/prisma/schema.prisma`
+- **Key Validation**: Run `npx tsx scripts/validate-keys.ts` after adding credentials to `.env`.
